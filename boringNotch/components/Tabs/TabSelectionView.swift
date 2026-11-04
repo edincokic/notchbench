@@ -15,7 +15,7 @@ struct TabModel: Identifiable {
     let view: NotchViews
 }
 
-/// Tabs shown in the open notch. Shelf and Clipboard only appear when turned on in Settings.
+/// Tabs shown in the open notch. Shelf, Clipboard and Jobs & Ports only appear when turned on in Settings.
 var tabs: [TabModel] {
     var result = [TabModel(label: "Home", icon: "house.fill", view: .home)]
     if Defaults[.boringShelf] {
@@ -23,6 +23,9 @@ var tabs: [TabModel] {
     }
     if Defaults[.enableClipboardHistory] {
         result.append(TabModel(label: "Clipboard", icon: "doc.on.clipboard.fill", view: .clipboard))
+    }
+    if Defaults[.enableJobsAndPorts] {
+        result.append(TabModel(label: "Jobs & Ports", icon: "server.rack", view: .jobs))
     }
     return result
 }
@@ -32,6 +35,7 @@ struct TabSelectionView: View {
     // Redraw the tabs when these settings change
     @Default(.boringShelf) private var boringShelf
     @Default(.enableClipboardHistory) private var enableClipboardHistory
+    @Default(.enableJobsAndPorts) private var enableJobsAndPorts
     @Namespace var animation
     var body: some View {
         HStack(spacing: 0) {

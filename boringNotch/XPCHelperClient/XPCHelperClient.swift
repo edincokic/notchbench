@@ -241,6 +241,58 @@ final class XPCHelperClient: NSObject {
             return false
         }
     }
+
+    // MARK: - Jobs & Ports
+
+    nonisolated func listScheduledJobs() async -> Data? {
+        await requestData { service, reply in service.listScheduledJobs(with: reply) }
+    }
+
+    nonisolated func listListeningPorts() async -> Data? {
+        await requestData { service, reply in service.listListeningPorts(with: reply) }
+    }
+
+    nonisolated func runJob(_ label: String) async -> Bool {
+        await requestBool { service, reply in service.runJob(label, with: reply) }
+    }
+
+    nonisolated func stopJob(_ label: String) async -> Bool {
+        await requestBool { service, reply in service.stopJob(label, with: reply) }
+    }
+
+    nonisolated func openJobLog(_ label: String) async -> Bool {
+        await requestBool { service, reply in service.openJobLog(label, with: reply) }
+    }
+
+    nonisolated func stopProcessListening(onPort port: Int, pid: Int32) async -> Bool {
+        await requestBool { service, reply in service.stopProcessListening(onPort: port, pid: pid, with: reply) }
+    }
+
+    private nonisolated func requestData(
+        _ call: @escaping (BoringNotchXPCHelperProtocol, @escaping (Data?) -> Void) -> Void
+    ) async -> Data? {
+        do {
+            let service = await MainActor.run { ensureRemoteService() }
+            return try await service.withContinuation { service, continuation in
+                call(service) { continuation.resume(returning: $0) }
+            }
+        } catch {
+            return nil
+        }
+    }
+
+    private nonisolated func requestBool(
+        _ call: @escaping (BoringNotchXPCHelperProtocol, @escaping (Bool) -> Void) -> Void
+    ) async -> Bool {
+        do {
+            let service = await MainActor.run { ensureRemoteService() }
+            return try await service.withContinuation { service, continuation in
+                call(service) { continuation.resume(returning: $0) }
+            }
+        } catch {
+            return false
+        }
+    }
 }
 
 extension Notification.Name {

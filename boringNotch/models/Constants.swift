@@ -174,6 +174,11 @@ extension Defaults.Keys {
     // MARK: Clipboard history
     static let enableClipboardHistory = Key<Bool>("enableClipboardHistory", default: true)
     static let clipboardHistoryLimit = Key<Int>("clipboardHistoryLimit", default: 30)
+
+    // MARK: Jobs & Ports
+    static let enableJobsAndPorts = Key<Bool>("enableJobsAndPorts", default: true)
+    static let hiddenJobLabels = Key<[String]>("hiddenJobLabels", default: [])
+    static let hiddenPortProcesses = Key<[String]>("hiddenPortProcesses", default: ["ControlCenter", "rapportd"])
     
     // MARK: Calendar
     static let calendarSelectionState = Key<CalendarSelectionState>("calendarSelectionState", default: .all)

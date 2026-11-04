@@ -54,6 +54,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Clipboard") {
                     Label("Clipboard", systemImage: "doc.on.clipboard")
                 }
+                NavigationLink(value: "JobsAndPorts") {
+                    Label("Jobs & Ports", systemImage: "server.rack")
+                }
                 NavigationLink(value: "Shortcuts") {
                     Label("Shortcuts", systemImage: "keyboard")
                 }
@@ -90,6 +93,8 @@ struct SettingsView: View {
                     Shelf()
                 case "Clipboard":
                     ClipboardSettings()
+                case "JobsAndPorts":
+                    JobsAndPortsSettings()
                 case "Shortcuts":
                     Shortcuts()
                 case "Extensions":
@@ -956,6 +961,74 @@ struct ClipboardSettings: View {
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Clipboard")
+    }
+}
+
+struct JobsAndPortsSettings: View {
+    @Default(.enableJobsAndPorts) var enableJobsAndPorts
+    @Default(.hiddenJobLabels) var hiddenJobLabels
+    @Default(.hiddenPortProcesses) var hiddenPortProcesses
+    @ObservedObject var coordinator = BoringViewCoordinator.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Defaults.Toggle(key: .enableJobsAndPorts) {
+                    Text("Show Jobs & Ports tab")
+                }
+                .onChange(of: enableJobsAndPorts) { _, enabled in
+                    if !enabled && coordinator.currentView == .jobs {
+                        coordinator.currentView = .home
+                    }
+                }
+            } header: {
+                Text("General")
+            } footer: {
+                Text("Shows your LaunchAgents (~/Library/LaunchAgents) and crontab with their schedules, plus every app or server listening on a TCP port. Hover a row to run, stop or open it.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Section {
+                if hiddenJobLabels.isEmpty {
+                    Text("No hidden jobs").foregroundColor(.secondary)
+                }
+                ForEach(hiddenJobLabels, id: \.self) { label in
+                    HStack {
+                        Text(label)
+                        Spacer()
+                        Button("Show") { hiddenJobLabels.removeAll { $0 == label } }
+                    }
+                }
+            } header: {
+                Text("Hidden jobs")
+            } footer: {
+                Text("Right-click a job in the notch to hide it.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Section {
+                if hiddenPortProcesses.isEmpty {
+                    Text("No hidden apps").foregroundColor(.secondary)
+                }
+                ForEach(hiddenPortProcesses, id: \.self) { process in
+                    HStack {
+                        Text(process)
+                        Spacer()
+                        Button("Show") { hiddenPortProcesses.removeAll { $0 == process } }
+                    }
+                }
+            } header: {
+                Text("Hidden from Ports")
+            } footer: {
+                Text("Right-click a port in the notch to hide that app.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .accentColor(.effectiveAccent)
+        .navigationTitle("Jobs & Ports")
     }
 }
 

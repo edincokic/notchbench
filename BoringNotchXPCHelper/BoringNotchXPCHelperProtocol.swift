@@ -20,6 +20,13 @@ import Foundation
     func isScreenBrightnessAvailable(with reply: @escaping (Bool) -> Void)
     func currentScreenBrightness(with reply: @escaping (NSNumber?) -> Void)
     func setScreenBrightness(_ value: Float, with reply: @escaping (Bool) -> Void)
+    // Scheduled jobs and listening ports (Jobs & Ports tab). Lists are returned as JSON.
+    func listScheduledJobs(with reply: @escaping (Data?) -> Void)
+    func runJob(_ label: String, with reply: @escaping (Bool) -> Void)
+    func stopJob(_ label: String, with reply: @escaping (Bool) -> Void)
+    func openJobLog(_ label: String, with reply: @escaping (Bool) -> Void)
+    func listListeningPorts(with reply: @escaping (Data?) -> Void)
+    func stopProcessListening(onPort port: Int, pid: Int32, with reply: @escaping (Bool) -> Void)
 }
 
 /*
