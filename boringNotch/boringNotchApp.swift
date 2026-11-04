@@ -21,8 +21,10 @@ struct DynamicNotchApp: App {
     let updaterController: SPUStandardUpdaterController
 
     init() {
+        // Custom build: don't start the official updater, so an official release
+        // can't replace this copy (and remove its extra features).
         updaterController = SPUStandardUpdaterController(
-            startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+            startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil)
 
         // Initialize the settings window controller with the updater controller
         SettingsWindowController.shared.setUpdaterController(updaterController)
