@@ -51,6 +51,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Shelf") {
                     Label("Shelf", systemImage: "books.vertical")
                 }
+                NavigationLink(value: "Clipboard") {
+                    Label("Clipboard", systemImage: "doc.on.clipboard")
+                }
                 NavigationLink(value: "Shortcuts") {
                     Label("Shortcuts", systemImage: "keyboard")
                 }
@@ -85,6 +88,8 @@ struct SettingsView: View {
                     Charge()
                 case "Shelf":
                     Shelf()
+                case "Clipboard":
+                    ClipboardSettings()
                 case "Shortcuts":
                     Shortcuts()
                 case "Extensions":
@@ -906,6 +911,51 @@ struct About: View {
             CheckForUpdatesView(updater: updaterController.updater)
         }
         .navigationTitle("About")
+    }
+}
+
+struct ClipboardSettings: View {
+    @Default(.clipboardHistoryLimit) var clipboardHistoryLimit
+    @ObservedObject var manager = ClipboardHistoryManager.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Defaults.Toggle(key: .enableClipboardHistory) {
+                    Text("Enable clipboard history")
+                }
+                Picker("Items to keep", selection: $clipboardHistoryLimit) {
+                    ForEach([10, 20, 30, 50, 100], id: \.self) { count in
+                        Text("\(count)").tag(count)
+                    }
+                }
+            } header: {
+                Text("General")
+            } footer: {
+                Text("Pinned items are always kept and don't count toward this limit. Items copied from password managers are never saved.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+
+            Section {
+                HStack {
+                    Text("\(manager.items.count) saved items")
+                    Spacer()
+                    Button("Clear history") {
+                        manager.clearUnpinned()
+                    }
+                    .disabled(!manager.items.contains { !$0.isPinned })
+                }
+            } header: {
+                Text("History")
+            } footer: {
+                Text("Clearing keeps pinned items.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .accentColor(.effectiveAccent)
+        .navigationTitle("Clipboard")
     }
 }
 

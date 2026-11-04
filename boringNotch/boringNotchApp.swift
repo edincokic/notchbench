@@ -280,6 +280,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Start recording clipboard history (if turned on in Settings)
+        _ = ClipboardHistoryManager.shared
 
         NotificationCenter.default.addObserver(
             self,

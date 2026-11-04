@@ -170,6 +170,10 @@ extension Defaults.Keys {
     static let copyOnDrag = Key<Bool>("copyOnDrag", default: false)
     static let autoRemoveShelfItems = Key<Bool>("autoRemoveShelfItems", default: false)
     static let expandedDragDetection = Key<Bool>("expandedDragDetection", default: true)
+
+    // MARK: Clipboard history
+    static let enableClipboardHistory = Key<Bool>("enableClipboardHistory", default: true)
+    static let clipboardHistoryLimit = Key<Int>("clipboardHistoryLimit", default: 30)
     
     // MARK: Calendar
     static let calendarSelectionState = Key<CalendarSelectionState>("calendarSelectionState", default: .all)

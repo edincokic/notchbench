@@ -5,6 +5,7 @@
 //  Created by Hugo Persson on 2024-08-25.
 //
 
+import Defaults
 import SwiftUI
 
 struct TabModel: Identifiable {
@@ -14,13 +15,23 @@ struct TabModel: Identifiable {
     let view: NotchViews
 }
 
-let tabs = [
-    TabModel(label: "Home", icon: "house.fill", view: .home),
-    TabModel(label: "Shelf", icon: "tray.fill", view: .shelf)
-]
+/// Tabs shown in the open notch. Shelf and Clipboard only appear when turned on in Settings.
+var tabs: [TabModel] {
+    var result = [TabModel(label: "Home", icon: "house.fill", view: .home)]
+    if Defaults[.boringShelf] {
+        result.append(TabModel(label: "Shelf", icon: "tray.fill", view: .shelf))
+    }
+    if Defaults[.enableClipboardHistory] {
+        result.append(TabModel(label: "Clipboard", icon: "doc.on.clipboard.fill", view: .clipboard))
+    }
+    return result
+}
 
 struct TabSelectionView: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
+    // Redraw the tabs when these settings change
+    @Default(.boringShelf) private var boringShelf
+    @Default(.enableClipboardHistory) private var enableClipboardHistory
     @Namespace var animation
     var body: some View {
         HStack(spacing: 0) {
