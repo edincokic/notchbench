@@ -182,6 +182,9 @@ extension Defaults.Keys {
 
     // MARK: Notes
     static let enableNotes = Key<Bool>("enableNotes", default: true)
+
+    // MARK: System stats
+    static let enableSystemStats = Key<Bool>("enableSystemStats", default: true)
     
     // MARK: Calendar
     static let calendarSelectionState = Key<CalendarSelectionState>("calendarSelectionState", default: .all)

@@ -27,5 +27,7 @@ import Foundation
     func openJobLog(_ label: String, with reply: @escaping (Bool) -> Void)
     func listListeningPorts(with reply: @escaping (Data?) -> Void)
     func stopProcessListening(onPort port: Int, pid: Int32, with reply: @escaping (Bool) -> Void)
+    // Busiest processes for the System tab (JSON).
+    func listTopProcesses(with reply: @escaping (Data?) -> Void)
 }
 

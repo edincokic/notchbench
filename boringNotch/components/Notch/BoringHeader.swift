@@ -16,10 +16,11 @@ struct BoringHeader: View {
     @Default(.enableClipboardHistory) var enableClipboardHistory
     @Default(.enableJobsAndPorts) var enableJobsAndPorts
     @Default(.enableNotes) var enableNotes
+    @Default(.enableSystemStats) var enableSystemStats
     var body: some View {
         HStack(spacing: 0) {
             HStack {
-                if ((!tvm.isEmpty || coordinator.alwaysShowTabs) && Defaults[.boringShelf]) || enableClipboardHistory || enableJobsAndPorts || enableNotes {
+                if ((!tvm.isEmpty || coordinator.alwaysShowTabs) && Defaults[.boringShelf]) || enableClipboardHistory || enableJobsAndPorts || enableNotes || enableSystemStats {
                     TabSelectionView()
                 } else if vm.notchState == .open {
                     EmptyView()

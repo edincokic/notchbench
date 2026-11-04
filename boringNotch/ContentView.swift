@@ -355,6 +355,8 @@ struct ContentView: View {
                         JobsAndPortsView()
                     case .notes:
                         NotesView()
+                    case .system:
+                        SystemStatsView()
                     }
                 }
                 .transition(

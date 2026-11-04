@@ -327,6 +327,7 @@
 		C1B0A2D00000000000000001 /* Clipboard */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Clipboard; sourceTree = "<group>"; };
 		C1B0A2D00000000000000002 /* JobsAndPorts */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = JobsAndPorts; sourceTree = "<group>"; };
 		C1B0A2D00000000000000003 /* Notes */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Notes; sourceTree = "<group>"; };
+		C1B0A2D00000000000000004 /* SystemStats */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SystemStats; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -496,6 +497,7 @@
 				C1B0A2D00000000000000001 /* Clipboard */,
 				C1B0A2D00000000000000002 /* JobsAndPorts */,
 				C1B0A2D00000000000000003 /* Notes */,
+				C1B0A2D00000000000000004 /* SystemStats */,
 				149E0B982C737D26006418B1 /* Webcam */,
 				B18654312C6F45AE000B926A /* Live activities */,
 				B18654302C6F4590000B926A /* Settings */,
@@ -808,6 +810,7 @@
 				C1B0A2D00000000000000001 /* Clipboard */,
 				C1B0A2D00000000000000002 /* JobsAndPorts */,
 				C1B0A2D00000000000000003 /* Notes */,
+				C1B0A2D00000000000000004 /* SystemStats */,
 			);
 			name = boringNotch;
 			packageProductDependencies = (

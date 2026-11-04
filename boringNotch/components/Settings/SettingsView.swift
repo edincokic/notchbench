@@ -60,6 +60,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Notes") {
                     Label("Notes", systemImage: "note.text")
                 }
+                NavigationLink(value: "System") {
+                    Label("System", systemImage: "cpu")
+                }
                 NavigationLink(value: "Shortcuts") {
                     Label("Shortcuts", systemImage: "keyboard")
                 }
@@ -100,6 +103,8 @@ struct SettingsView: View {
                     JobsAndPortsSettings()
                 case "Notes":
                     NotesSettings()
+                case "System":
+                    SystemStatsSettings()
                 case "Shortcuts":
                     Shortcuts()
                 case "Extensions":
@@ -1065,6 +1070,34 @@ struct NotesSettings: View {
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Notes")
+    }
+}
+
+struct SystemStatsSettings: View {
+    @Default(.enableSystemStats) var enableSystemStats
+    @ObservedObject var coordinator = BoringViewCoordinator.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Defaults.Toggle(key: .enableSystemStats) {
+                    Text("Show System tab")
+                }
+                .onChange(of: enableSystemStats) { _, enabled in
+                    if !enabled && coordinator.currentView == .system {
+                        coordinator.currentView = .home
+                    }
+                }
+            } header: {
+                Text("General")
+            } footer: {
+                Text("CPU and memory use with a 60-second graph, and the apps using the most. Only measured while the tab is open.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .accentColor(.effectiveAccent)
+        .navigationTitle("System")
     }
 }
 

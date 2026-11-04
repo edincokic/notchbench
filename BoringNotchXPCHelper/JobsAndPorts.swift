@@ -275,7 +275,8 @@ extension BoringNotchXPCHelper {
 
     // MARK: - Running commands
 
-    private static func run(_ path: String, _ arguments: [String]) -> (status: Int32, output: String) {
+    /// Runs a command and returns its exit status and output. Also used by SystemStats.swift.
+    static func run(_ path: String, _ arguments: [String]) -> (status: Int32, output: String) {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: path)
         process.arguments = arguments

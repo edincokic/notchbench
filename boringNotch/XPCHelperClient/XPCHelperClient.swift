@@ -268,6 +268,10 @@ final class XPCHelperClient: NSObject {
         await requestBool { service, reply in service.stopProcessListening(onPort: port, pid: pid, with: reply) }
     }
 
+    nonisolated func listTopProcesses() async -> Data? {
+        await requestData { service, reply in service.listTopProcesses(with: reply) }
+    }
+
     private nonisolated func requestData(
         _ call: @escaping (BoringNotchXPCHelperProtocol, @escaping (Data?) -> Void) -> Void
     ) async -> Data? {

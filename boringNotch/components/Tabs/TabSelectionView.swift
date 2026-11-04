@@ -15,7 +15,7 @@ struct TabModel: Identifiable {
     let view: NotchViews
 }
 
-/// Tabs shown in the open notch. Shelf, Clipboard, Jobs & Ports and Notes only appear when turned on in Settings.
+/// Tabs shown in the open notch. Shelf, Clipboard, Jobs & Ports, Notes and System only appear when turned on in Settings.
 var tabs: [TabModel] {
     var result = [TabModel(label: "Home", icon: "house.fill", view: .home)]
     if Defaults[.boringShelf] {
@@ -30,6 +30,9 @@ var tabs: [TabModel] {
     if Defaults[.enableNotes] {
         result.append(TabModel(label: "Notes", icon: "note.text", view: .notes))
     }
+    if Defaults[.enableSystemStats] {
+        result.append(TabModel(label: "System", icon: "cpu", view: .system))
+    }
     return result
 }
 
@@ -40,6 +43,7 @@ struct TabSelectionView: View {
     @Default(.enableClipboardHistory) private var enableClipboardHistory
     @Default(.enableJobsAndPorts) private var enableJobsAndPorts
     @Default(.enableNotes) private var enableNotes
+    @Default(.enableSystemStats) private var enableSystemStats
     @Namespace var animation
     var body: some View {
         HStack(spacing: 0) {
