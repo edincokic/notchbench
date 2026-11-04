@@ -353,6 +353,8 @@ struct ContentView: View {
                         ClipboardView()
                     case .jobs:
                         JobsAndPortsView()
+                    case .notes:
+                        NotesView()
                     }
                 }
                 .transition(

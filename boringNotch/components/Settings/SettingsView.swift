@@ -57,6 +57,9 @@ struct SettingsView: View {
                 NavigationLink(value: "JobsAndPorts") {
                     Label("Jobs & Ports", systemImage: "server.rack")
                 }
+                NavigationLink(value: "Notes") {
+                    Label("Notes", systemImage: "note.text")
+                }
                 NavigationLink(value: "Shortcuts") {
                     Label("Shortcuts", systemImage: "keyboard")
                 }
@@ -95,6 +98,8 @@ struct SettingsView: View {
                     ClipboardSettings()
                 case "JobsAndPorts":
                     JobsAndPortsSettings()
+                case "Notes":
+                    NotesSettings()
                 case "Shortcuts":
                     Shortcuts()
                 case "Extensions":
@@ -1029,6 +1034,37 @@ struct JobsAndPortsSettings: View {
         }
         .accentColor(.effectiveAccent)
         .navigationTitle("Jobs & Ports")
+    }
+}
+
+struct NotesSettings: View {
+    @Default(.enableNotes) var enableNotes
+    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var notes = NotesManager.shared
+
+    var body: some View {
+        Form {
+            Section {
+                Defaults.Toggle(key: .enableNotes) {
+                    Text("Show Notes tab")
+                }
+                .onChange(of: enableNotes) { _, enabled in
+                    if !enabled && coordinator.currentView == .notes {
+                        coordinator.currentView = .home
+                    }
+                }
+                Text("\(notes.notes.count) saved notes")
+                    .foregroundColor(.secondary)
+            } header: {
+                Text("General")
+            } footer: {
+                Text("Click into a note to type. The notch stays open while you type; press Esc or Done to finish. Notes are saved automatically.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .accentColor(.effectiveAccent)
+        .navigationTitle("Notes")
     }
 }
 

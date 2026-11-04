@@ -15,10 +15,11 @@ struct BoringHeader: View {
     @StateObject var tvm = ShelfStateViewModel.shared
     @Default(.enableClipboardHistory) var enableClipboardHistory
     @Default(.enableJobsAndPorts) var enableJobsAndPorts
+    @Default(.enableNotes) var enableNotes
     var body: some View {
         HStack(spacing: 0) {
             HStack {
-                if ((!tvm.isEmpty || coordinator.alwaysShowTabs) && Defaults[.boringShelf]) || enableClipboardHistory || enableJobsAndPorts {
+                if ((!tvm.isEmpty || coordinator.alwaysShowTabs) && Defaults[.boringShelf]) || enableClipboardHistory || enableJobsAndPorts || enableNotes {
                     TabSelectionView()
                 } else if vm.notchState == .open {
                     EmptyView()

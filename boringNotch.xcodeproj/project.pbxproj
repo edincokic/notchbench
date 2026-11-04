@@ -326,6 +326,7 @@
 		11F748502EC9AABA00F841DB /* BoringNotchXPCHelper */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (11F7485C2EC9AABA00F841DB /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = BoringNotchXPCHelper; sourceTree = "<group>"; };
 		C1B0A2D00000000000000001 /* Clipboard */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Clipboard; sourceTree = "<group>"; };
 		C1B0A2D00000000000000002 /* JobsAndPorts */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = JobsAndPorts; sourceTree = "<group>"; };
+		C1B0A2D00000000000000003 /* Notes */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Notes; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -494,6 +495,7 @@
 				9A987A042C73CA66005CA465 /* Shelf */,
 				C1B0A2D00000000000000001 /* Clipboard */,
 				C1B0A2D00000000000000002 /* JobsAndPorts */,
+				C1B0A2D00000000000000003 /* Notes */,
 				149E0B982C737D26006418B1 /* Webcam */,
 				B18654312C6F45AE000B926A /* Live activities */,
 				B18654302C6F4590000B926A /* Settings */,
@@ -805,6 +807,7 @@
 				112FB72F2CCF12CC0015238C /* private */,
 				C1B0A2D00000000000000001 /* Clipboard */,
 				C1B0A2D00000000000000002 /* JobsAndPorts */,
+				C1B0A2D00000000000000003 /* Notes */,
 			);
 			name = boringNotch;
 			packageProductDependencies = (

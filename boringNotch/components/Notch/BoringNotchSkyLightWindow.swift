@@ -109,6 +109,7 @@ class BoringNotchSkyLightWindow: NSPanel {
     
     private var observers: Set<AnyCancellable> = []
     
-    override var canBecomeKey: Bool { false }
+    // Only the Notes tab lets the notch take keyboard focus (see NotchKeyboardFocus).
+    override var canBecomeKey: Bool { NotchKeyboardFocus.shared.allowsFocus }
     override var canBecomeMain: Bool { false }
 }

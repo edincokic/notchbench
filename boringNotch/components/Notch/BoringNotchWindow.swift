@@ -40,8 +40,9 @@ class BoringNotchWindow: NSPanel {
         hasShadow = false
     }
     
+    // Only the Notes tab lets the notch take keyboard focus (see NotchKeyboardFocus).
     override var canBecomeKey: Bool {
-        false
+        NotchKeyboardFocus.shared.allowsFocus
     }
     
     override var canBecomeMain: Bool {
