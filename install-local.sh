@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds this custom Boring Notch and installs it to /Applications/boringNotch.app.
+# Builds Notchbench and installs it to /Applications/Notchbench.app.
 # Usage: ./install-local.sh
 #
 # Local build only: signed "ad hoc" (no Apple developer account), so hardened
@@ -15,9 +15,9 @@ xcodebuild -project boringNotch.xcodeproj -scheme boringNotch -configuration Rel
   build > build-release.log 2>&1 || { grep -E "error:" build-release.log | head -20; echo "Build failed, see build-release.log"; exit 1; }
 
 echo "Installing…"
-osascript -e 'quit app id "theboringteam.boringnotch"' 2>/dev/null || true
+osascript -e 'quit app id "dev.edincokic.notchbench"' 2>/dev/null || true
 sleep 2
-rm -rf /Applications/boringNotch.app
-ditto "build/Build/Products/Release/Boring Notch.app" /Applications/boringNotch.app
-open /Applications/boringNotch.app
-echo "Done: /Applications/boringNotch.app is running."
+rm -rf /Applications/Notchbench.app
+ditto "build/Build/Products/Release/Notchbench.app" /Applications/Notchbench.app
+open /Applications/Notchbench.app
+echo "Done: /Applications/Notchbench.app is running."

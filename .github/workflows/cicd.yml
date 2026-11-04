@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   build:
-    name: Build Boring Notch
+    name: Build Notchbench
     strategy:
       matrix:
         platform:
@@ -29,7 +29,7 @@ jobs:
         scheme:
           - boringNotch
     # macos-latest now resolves to macos-26, which does not ship Xcode 16.
-    # Keep this legacy main-branch build on an image with the requested toolchain.
+    # Build on an image that ships Xcode 16.
     runs-on: macos-15
     steps:
     - name: Code Checkout

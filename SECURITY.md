@@ -1,11 +1,13 @@
 # Security Policy
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-The Bored Team and community take security bugs in Boring Notch seriously. We appreciate your efforts to responsibly disclose your findings, and will make every effort to acknowledge your contributions.
+Please don't open a public issue for security problems. Report them privately through
+GitHub's ["Report a vulnerability"](https://github.com/edincokic/notchbench/security/advisories/new) form.
 
-To report a security issue, please use the GitHub Security Advisory ["Report a Vulnerability"](https://github.com/TheBoredTeam/boring.notch/security/advisories/new) tab.
+Include what you found, how to reproduce it, and which version you were using.
+You'll get a reply as soon as possible, and a fix will be released once the problem is confirmed.
 
-The Bored Team will send a response indicating the next steps in handling your report. After the initial reply to your report, we will keep you informed of the progress towards a fix and full announcement, and may ask for additional information or guidance.
+## Supported versions
 
-Report security bugs in third-party dependencies to the person or team maintaining the package or dependency.
+Only the latest release of Notchbench gets security fixes.

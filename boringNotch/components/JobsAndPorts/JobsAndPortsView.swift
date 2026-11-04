@@ -34,7 +34,7 @@ struct JobsAndPortsView: View {
         }
         .overlay {
             if manager.helperUnavailable {
-                Text("Couldn't reach the Boring Notch helper")
+                Text("Couldn't reach the Notchbench helper")
                     .font(.system(size: 11))
                     .foregroundStyle(.white)
                     .padding(8)

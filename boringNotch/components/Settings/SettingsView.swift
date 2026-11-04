@@ -861,12 +861,6 @@ struct About: View {
             Form {
                 Section {
                     HStack {
-                        Text("Release name")
-                        Spacer()
-                        Text(Defaults[.releaseName])
-                            .foregroundStyle(.secondary)
-                    }
-                    HStack {
                         Text("Version")
                         Spacer()
                         if showBuildNumber {
@@ -885,12 +879,18 @@ struct About: View {
                     Text("Version info")
                 }
 
-                UpdaterSettingsView(updater: updaterController.updater)
+                Section {
+                    Text("Notchbench is based on Boring Notch by TheBoredTeam and, like it, is free software under the GNU General Public License v3.0.")
+                        .foregroundStyle(.secondary)
+                    Link("Boring Notch on GitHub", destination: URL(string: "https://github.com/TheBoredTeam/boring.notch")!)
+                } header: {
+                    Text("Credits")
+                }
 
                 HStack(spacing: 30) {
                     Spacer(minLength: 0)
                     Button {
-                        if let url = URL(string: "https://github.com/TheBoredTeam/boring.notch") {
+                        if let url = URL(string: "https://github.com/edincokic/notchbench") {
                             NSWorkspace.shared.open(url)
                         }
                     } label: {
@@ -909,7 +909,7 @@ struct About: View {
             }
             VStack(spacing: 0) {
                 Divider()
-                Text("Made with 🫶🏻 by not so boring not.people")
+                Text("Made by WakandaDev")
                     .foregroundStyle(.secondary)
                     .padding(.top, 5)
                     .padding(.bottom, 7)
@@ -917,13 +917,6 @@ struct About: View {
                     .padding(.horizontal, 10)
             }
             .frame(maxWidth: .infinity, alignment: .center)
-        }
-        .toolbar {
-            //            Button("Welcome window") {
-            //                openWindow(id: "onboarding")
-            //            }
-            //            .controlSize(.extraLarge)
-            CheckForUpdatesView(updater: updaterController.updater)
         }
         .navigationTitle("About")
     }
@@ -1357,8 +1350,8 @@ struct Appearance: View {
     @Default(.customVisualizers) var customVisualizers
     @Default(.selectedVisualizer) var selectedVisualizer
 
-    let icons: [String] = ["logo2"]
-    @State private var selectedIcon: String = "logo2"
+    let icons: [String] = ["AppIcon"]
+    @State private var selectedIcon: String = "AppIcon"
     @State private var selectedListVisualizer: CustomVisualizer? = nil
     @State private var isPresented: Bool = false
     @State private var name: String = ""
@@ -1610,8 +1603,8 @@ struct Advanced: View {
     
     @State private var customAccentColor: Color = .accentColor
     @State private var selectedPresetColor: PresetAccentColor? = nil
-    let icons: [String] = ["logo2"]
-    @State private var selectedIcon: String = "logo2"
+    let icons: [String] = ["AppIcon"]
+    @State private var selectedIcon: String = "AppIcon"
     
     // macOS accent colors
     enum PresetAccentColor: String, CaseIterable, Identifiable {
@@ -1765,7 +1758,7 @@ struct Advanced: View {
                     ForEach(icons, id: \.self) { icon in
                         Spacer()
                         VStack {
-                            Image(icon)
+                            Image(nsImage: NSImage(named: icon) ?? NSApp.applicationIconImage)
                                 .resizable()
                                 .frame(width: 80, height: 80)
                                 .background(

@@ -21,8 +21,7 @@ struct DynamicNotchApp: App {
     let updaterController: SPUStandardUpdaterController
 
     init() {
-        // Custom build: don't start the official updater, so an official release
-        // can't replace this copy (and remove its extra features).
+        // Notchbench has no update feed yet, so the updater is never started.
         updaterController = SPUStandardUpdaterController(
             startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil)
 
@@ -31,16 +30,15 @@ struct DynamicNotchApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("boring.notch", systemImage: "sparkle", isInserted: $showMenuBarIcon) {
+        MenuBarExtra("Notchbench", systemImage: "sparkle", isInserted: $showMenuBarIcon) {
             Button("Settings") {
                 DispatchQueue.main.async {
                     SettingsWindowController.shared.showWindow()
                 }
             }
             .keyboardShortcut(KeyEquivalent(","), modifiers: .command)
-            CheckForUpdatesView(updater: updaterController.updater)
             Divider()
-            Button("Restart Boring Notch") {
+            Button("Restart Notchbench") {
                 ApplicationRelauncher.restart()
             }
             Button("Quit", role: .destructive) {
