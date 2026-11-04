@@ -178,7 +178,7 @@ extension Defaults.Keys {
     // MARK: Jobs & Ports
     static let enableJobsAndPorts = Key<Bool>("enableJobsAndPorts", default: true)
     static let hiddenJobLabels = Key<[String]>("hiddenJobLabels", default: [])
-    static let hiddenPortProcesses = Key<[String]>("hiddenPortProcesses", default: ["ControlCenter", "rapportd"])
+    static let hiddenPortProcesses = Key<[String]>("hiddenPortProcesses", default: ["ControlCenter", "rapportd", "Code Helper", "Code Helper (Plugin)"])
 
     // MARK: Notes
     static let enableNotes = Key<Bool>("enableNotes", default: true)

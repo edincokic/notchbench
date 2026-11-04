@@ -166,6 +166,7 @@ struct ListeningPort: Identifiable, Decodable, Equatable {
     let process: String
     let address: String
     let commandLine: String
+    let workingDirectory: String?
 
     var isLocalOnly: Bool {
         ["127.0.0.1", "::1", "localhost"].contains(address)
@@ -179,16 +180,23 @@ struct ListeningPort: Identifiable, Decodable, Equatable {
         return "\(process) · \(project)"
     }
 
-    /// Folder of the first script/path argument in the command line.
+    /// The script's folder ("node /x/myapp/server.mjs" → "myapp"),
+    /// or the folder the process runs in ("python server.py" → its working folder).
     private var projectName: String? {
         let args = commandLine.split(separator: " ").dropFirst()
-        guard let pathArg = args.first(where: { $0.hasPrefix("/") || $0.hasPrefix("./") || $0.contains(".") && $0.contains("/") }) else {
-            return nil
+        if let absolute = args.first(where: { $0.hasPrefix("/") }) {
+            let url = URL(fileURLWithPath: String(absolute))
+            let folder = url.pathExtension.isEmpty ? url : url.deletingLastPathComponent()
+            if let name = Self.usefulFolderName(folder.path) { return name }
         }
-        let url = URL(fileURLWithPath: String(pathArg))
-        let folder = url.pathExtension.isEmpty ? url : url.deletingLastPathComponent()
-        let name = folder.lastPathComponent
-        return name.isEmpty || name == "/" || name == "bin" ? nil : name
+        return workingDirectory.flatMap(Self.usefulFolderName)
+    }
+
+    private static func usefulFolderName(_ path: String) -> String? {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        guard !path.isEmpty, path != "/", path != home else { return nil }
+        let name = URL(fileURLWithPath: path).lastPathComponent
+        return ["bin", "sbin", "MacOS", ""].contains(name) ? nil : name
     }
 }
 
@@ -223,6 +231,7 @@ enum CronSchedule {
             let time = String(format: "%02d:%02d", h, m)
             if restIsAny { return "Daily \(time)" }
             if dom == "*", month == "*", dow == "1-5" { return "Mon–Fri \(time)" }
+            if let d = Int(dom), month == "*", dow == "*" { return "Monthly on day \(d) at \(time)" }
         }
         return expression
     }

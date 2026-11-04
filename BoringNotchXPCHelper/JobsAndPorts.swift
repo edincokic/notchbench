@@ -91,7 +91,9 @@ extension BoringNotchXPCHelper {
     @objc func listListeningPorts(with reply: @escaping (Data?) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async {
             let ports = Self.listeningPorts()
-            let commandLines = Self.commandLines(for: Set(ports.map(\.pid)))
+            let pids = Set(ports.map(\.pid))
+            let commandLines = Self.commandLines(for: pids)
+            let folders = Self.workingDirectories(for: pids)
             let result: [[String: Any]] = ports.map { port in
                 [
                     "id": "\(port.pid):\(port.port)",
@@ -100,6 +102,7 @@ extension BoringNotchXPCHelper {
                     "process": port.process,
                     "address": port.address,
                     "commandLine": commandLines[port.pid] ?? port.process,
+                    "workingDirectory": folders[port.pid] ?? "",
                 ]
             }
             reply(try? JSONSerialization.data(withJSONObject: result))
@@ -249,6 +252,23 @@ extension BoringNotchXPCHelper {
             guard let space = trimmed.firstIndex(of: " "),
                   let pid = Int32(trimmed[..<space]) else { continue }
             result[pid] = trimmed[space...].trimmingCharacters(in: .whitespaces)
+        }
+        return result
+    }
+
+    /// pid → folder the process is running in (tells which project a server belongs to).
+    private static func workingDirectories(for pids: Set<Int32>) -> [Int32: String] {
+        guard !pids.isEmpty else { return [:] }
+        let list = pids.map(String.init).joined(separator: ",")
+        let output = run("/usr/sbin/lsof", ["-a", "-p", list, "-d", "cwd", "-Fpn"]).output
+        var result: [Int32: String] = [:]
+        var pid: Int32 = 0
+        for line in output.split(separator: "\n") {
+            if line.hasPrefix("p") {
+                pid = Int32(line.dropFirst()) ?? 0
+            } else if line.hasPrefix("n") {
+                result[pid] = String(line.dropFirst())
+            }
         }
         return result
     }
