@@ -150,12 +150,27 @@ private struct JobRow: View {
             .shadow(color: job.status == .running ? .green.opacity(0.7) : .clear, radius: 3)
     }
 
+    /// launchd can only run a job that is loaded, so unloaded jobs get "Load" / "Turn on" instead of "Run".
+    private var canRun: Bool { job.status != .notLoaded && job.status != .disabled }
+    private var loadTitle: String { job.status == .disabled ? "Turn On" : "Load" }
+    private var loadHelp: String {
+        job.status == .disabled ? "Turn on (switches it back on and loads it)" : "Load (turns its schedule on)"
+    }
+
+    private var stopHelp: String {
+        job.keepAlive ? "Stop (stays off until you load it again or log in again)" : "Stop"
+    }
+
     private var actions: some View {
         HStack(spacing: 3) {
-            RowButton(icon: job.isRunning ? "arrow.clockwise" : "play.fill",
-                      help: job.isRunning ? "Restart" : "Run now") { manager.run(job) }
+            if !canRun {
+                RowButton(icon: "power", help: loadHelp) { manager.load(job) }
+            } else {
+                RowButton(icon: job.isRunning ? "arrow.clockwise" : "play.fill",
+                          help: job.isRunning ? "Restart" : "Run now") { manager.run(job) }
+            }
             if job.isRunning {
-                RowButton(icon: "stop.fill", help: "Stop") { manager.stop(job) }
+                RowButton(icon: "stop.fill", help: stopHelp) { manager.stop(job) }
             }
             if job.hasLog {
                 RowButton(icon: "doc.text", help: "Open log") { manager.openLog(job) }
@@ -166,8 +181,12 @@ private struct JobRow: View {
     @ViewBuilder
     private var menu: some View {
         if !job.isCron {
-            Button(job.isRunning ? "Restart" : "Run Now") { manager.run(job) }
-            if job.isRunning { Button("Stop") { manager.stop(job) } }
+            if !canRun {
+                Button(loadTitle) { manager.load(job) }
+            } else {
+                Button(job.isRunning ? "Restart" : "Run Now") { manager.run(job) }
+            }
+            if job.isRunning { Button("Stop") { manager.stop(job) }.help(stopHelp) }
             if job.hasLog { Button("Open Log") { manager.openLog(job) } }
             Divider()
         }

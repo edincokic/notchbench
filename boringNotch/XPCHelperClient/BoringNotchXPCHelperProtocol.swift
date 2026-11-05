@@ -24,6 +24,7 @@ import Foundation
     func listScheduledJobs(with reply: @escaping (Data?) -> Void)
     func runJob(_ label: String, with reply: @escaping (Bool) -> Void)
     func stopJob(_ label: String, with reply: @escaping (Bool) -> Void)
+    func loadJob(_ label: String, with reply: @escaping (Bool) -> Void)
     func openJobLog(_ label: String, with reply: @escaping (Bool) -> Void)
     func listListeningPorts(with reply: @escaping (Data?) -> Void)
     func stopProcessListening(onPort port: Int, pid: Int32, with reply: @escaping (Bool) -> Void)

@@ -260,6 +260,10 @@ final class XPCHelperClient: NSObject {
         await requestBool { service, reply in service.stopJob(label, with: reply) }
     }
 
+    nonisolated func loadJob(_ label: String) async -> Bool {
+        await requestBool { service, reply in service.loadJob(label, with: reply) }
+    }
+
     nonisolated func openJobLog(_ label: String) async -> Bool {
         await requestBool { service, reply in service.openJobLog(label, with: reply) }
     }

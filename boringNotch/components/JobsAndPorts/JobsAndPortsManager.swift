@@ -108,6 +108,11 @@ final class JobsAndPortsManager: ObservableObject {
         perform(id: job.id) { await XPCHelperClient.shared.stopJob(job.label) }
     }
 
+    /// Loads a job that isn't loaded, which turns its schedule on.
+    func load(_ job: ScheduledJob) {
+        perform(id: job.id) { await XPCHelperClient.shared.loadJob(job.label) }
+    }
+
     func openLog(_ job: ScheduledJob) {
         Task { _ = await XPCHelperClient.shared.openJobLog(job.label) }
     }

@@ -16,6 +16,7 @@ extension BoringNotchXPCHelper {
     @objc func listScheduledJobs(with reply: @escaping (Data?) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async {
             let states = Self.launchdStates()
+            let overrides = Self.launchdDisabledOverrides()
             var jobs: [[String: Any]] = []
 
             for (label, plist) in Self.userLaunchAgents() {
@@ -27,7 +28,8 @@ extension BoringNotchXPCHelper {
                     "loaded": states[label] != nil,
                     "keepAlive": Self.isKeepAlive(plist["KeepAlive"]),
                     "runAtLoad": plist["RunAtLoad"] as? Bool ?? false,
-                    "disabled": plist["Disabled"] as? Bool ?? false,
+                    // `launchctl disable` / `enable` win over the plist's own setting.
+                    "disabled": overrides[label] ?? (plist["Disabled"] as? Bool ?? false),
                     "hasLog": Self.logPath(from: plist) != nil,
                 ]
                 if let interval = plist["StartInterval"] as? Int {
@@ -70,9 +72,49 @@ extension BoringNotchXPCHelper {
     }
 
     @objc func stopJob(_ label: String, with reply: @escaping (Bool) -> Void) {
-        guard Self.isUserAgent(label) else { reply(false); return }
-        let result = Self.run("/bin/launchctl", ["kill", "SIGTERM", "gui/\(getuid())/\(label)"])
+        guard let plist = Self.userLaunchAgents()[label] else { reply(false); return }
+        let service = "gui/\(getuid())/\(label)"
+        // launchd restarts "keep alive" jobs as soon as they exit, so those are unloaded instead.
+        // They stay stopped until the user loads them again or logs in again.
+        let result = Self.isKeepAlive(plist["KeepAlive"])
+            ? Self.run("/bin/launchctl", ["bootout", service])
+            : Self.run("/bin/launchctl", ["kill", "SIGTERM", service])
         reply(result.status == 0)
+    }
+
+    /// Loads an agent from ~/Library/LaunchAgents, which turns its schedule on.
+    /// If it was switched off (`launchctl disable`), it is switched back on first,
+    /// because launchd refuses to load a disabled job.
+    @objc func loadJob(_ label: String, with reply: @escaping (Bool) -> Void) {
+        guard let file = Self.userLaunchAgentFiles()[label] else { reply(false); return }
+        let domain = "gui/\(getuid())"
+        if Self.isLoaded(label) { reply(true); return }
+        if Self.launchdDisabledOverrides()[label] == true || Self.userLaunchAgents()[label]?["Disabled"] as? Bool == true {
+            _ = Self.run("/bin/launchctl", ["enable", "\(domain)/\(label)"])
+        }
+        let result = Self.run("/bin/launchctl", ["bootstrap", domain, file.path])
+        reply(result.status == 0 || Self.isLoaded(label))
+    }
+
+    private static func isLoaded(_ label: String) -> Bool {
+        run("/bin/launchctl", ["print", "gui/\(getuid())/\(label)"]).status == 0
+    }
+
+    /// Label → true when switched off with `launchctl disable`, false when switched on with `launchctl enable`.
+    /// These overrides win over the plist's own "Disabled" key.
+    private static func launchdDisabledOverrides() -> [String: Bool] {
+        let output = run("/bin/launchctl", ["print-disabled", "gui/\(getuid())"]).output
+        var result: [String: Bool] = [:]
+        // Lines look like:  "com.example.job" => disabled   (older macOS: => true / => false)
+        for line in output.split(separator: "\n") {
+            let parts = line.components(separatedBy: "=>")
+            guard parts.count == 2 else { continue }
+            let label = parts[0].trimmingCharacters(in: .whitespaces).trimmingCharacters(in: CharacterSet(charactersIn: "\""))
+            let value = parts[1].trimmingCharacters(in: .whitespaces)
+            guard !label.isEmpty else { continue }
+            result[label] = value == "disabled" || value == "true"
+        }
+        return result
     }
 
     @objc func openJobLog(_ label: String, with reply: @escaping (Bool) -> Void) {
@@ -128,14 +170,23 @@ extension BoringNotchXPCHelper {
 
     /// Label → plist contents for every agent in ~/Library/LaunchAgents.
     private static func userLaunchAgents() -> [String: [String: Any]] {
+        readLaunchAgents().mapValues(\.plist)
+    }
+
+    /// Label → plist file for every agent in ~/Library/LaunchAgents.
+    private static func userLaunchAgentFiles() -> [String: URL] {
+        readLaunchAgents().mapValues(\.file)
+    }
+
+    private static func readLaunchAgents() -> [String: (file: URL, plist: [String: Any])] {
         let files = (try? FileManager.default.contentsOfDirectory(
             at: launchAgentsFolder, includingPropertiesForKeys: nil)) ?? []
-        var result: [String: [String: Any]] = [:]
+        var result: [String: (file: URL, plist: [String: Any])] = [:]
         for file in files where file.pathExtension == "plist" {
             guard let data = try? Data(contentsOf: file),
                   let plist = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any],
                   let label = plist["Label"] as? String else { continue }
-            result[label] = plist
+            result[label] = (file, plist)
         }
         return result
     }
@@ -267,7 +318,9 @@ extension BoringNotchXPCHelper {
             if line.hasPrefix("p") {
                 pid = Int32(line.dropFirst()) ?? 0
             } else if line.hasPrefix("n") {
-                result[pid] = String(line.dropFirst())
+                // When macOS won't reveal the folder, lsof prints an error here instead of a path.
+                let path = String(line.dropFirst())
+                if path.hasPrefix("/") { result[pid] = path }
             }
         }
         return result

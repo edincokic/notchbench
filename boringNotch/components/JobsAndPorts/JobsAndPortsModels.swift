@@ -49,9 +49,9 @@ struct ScheduledJob: Identifiable, Decodable, Equatable {
     }
 
     var status: Status {
-        if disabled { return .disabled }
         if isRunning { return .running }
-        if !loaded { return .notLoaded }
+        // Switching a job off doesn't unload it, so "disabled" only matters once it isn't loaded.
+        if !loaded { return disabled ? .disabled : .notLoaded }
         if hasFailed { return .failed }
         return .idle
     }
@@ -100,10 +100,12 @@ struct ScheduledJob: Identifiable, Decodable, Equatable {
         return "\(hour):\(minute)"
     }
 
-    private static func describeWeekdays(_ days: [Int]) -> String {
+    /// Also used for crontab, which numbers weekdays the same way.
+    static func describeWeekdays(_ days: [Int]) -> String {
         // launchd uses 0 and 7 for Sunday
         let sorted = Array(Set(days.map { $0 % 7 })).sorted()
         if sorted == [1, 2, 3, 4, 5] { return "Mon–Fri" }
+        if sorted == [1, 2, 3, 4, 5, 6] { return "Mon–Sat" }
         if sorted == [0, 6] { return "Weekends" }
         if sorted.count == 7 { return "Daily" }
         return sorted.map { weekdayNames[$0] }.joined(separator: ", ")
@@ -135,7 +137,7 @@ struct ScheduledJob: Identifiable, Decodable, Equatable {
         })
     }
 
-    private static func shortList(_ items: [String]) -> String {
+    static func shortList(_ items: [String]) -> String {
         items.count <= 3 ? items.joined(separator: ", ") : items.prefix(3).joined(separator: ", ") + " +\(items.count - 3)"
     }
 
@@ -184,19 +186,44 @@ struct ListeningPort: Identifiable, Decodable, Equatable {
     /// or the folder the process runs in ("python server.py" → its working folder).
     private var projectName: String? {
         let args = commandLine.split(separator: " ").dropFirst()
-        if let absolute = args.first(where: { $0.hasPrefix("/") }) {
-            let url = URL(fileURLWithPath: String(absolute))
-            let folder = url.pathExtension.isEmpty ? url : url.deletingLastPathComponent()
-            if let name = Self.usefulFolderName(folder.path) { return name }
+        if let absolute = args.first(where: { $0.hasPrefix("/") }),
+           let name = Self.projectFolderName(forScript: String(absolute)) {
+            return name
         }
         return workingDirectory.flatMap(Self.usefulFolderName)
     }
 
+    /// Folders that hold a project's installed tools rather than the project itself.
+    private static let toolFolders: Set<String> = ["node_modules", ".venv", "venv", "vendor"]
+
+    /// "/x/myapp/server.mjs" → "myapp".
+    /// Tools installed in a project belong to the folder above them:
+    /// "/x/dashboard/node_modules/.bin/vite" → "dashboard".
+    private static func projectFolderName(forScript path: String) -> String? {
+        let url = URL(fileURLWithPath: path)
+        let parts = url.pathComponents
+        if let index = parts.firstIndex(where: toolFolders.contains) {
+            guard index > 1 else { return nil }
+            return usefulFolderName(NSString.path(withComponents: Array(parts[..<index])))
+        }
+        let folder = url.pathExtension.isEmpty ? url : url.deletingLastPathComponent()
+        return usefulFolderName(folder.path)
+    }
+
+    /// The user's real home folder (the app's own home points into its sandbox container).
+    private static let realHome: String = {
+        guard let entry = getpwuid(getuid()), let dir = entry.pointee.pw_dir else { return NSHomeDirectory() }
+        return String(cString: dir)
+    }()
+
+    /// Folder names that don't say which project something is.
+    private static let genericFolders: Set<String> = ["bin", "sbin", "MacOS", "lib", "libexec", "share", "Cellar", "homebrew", "usr", "opt", "tmp", ""]
+
     private static func usefulFolderName(_ path: String) -> String? {
-        let home = FileManager.default.homeDirectoryForCurrentUser.path
-        guard !path.isEmpty, path != "/", path != home else { return nil }
+        // Only real paths: lsof can report an error message instead of a folder.
+        guard path.hasPrefix("/"), path != "/", path != realHome else { return nil }
         let name = URL(fileURLWithPath: path).lastPathComponent
-        return ["bin", "sbin", "MacOS", ""].contains(name) ? nil : name
+        return genericFolders.contains(name) ? nil : name
     }
 }
 
@@ -213,34 +240,119 @@ enum CronSchedule {
         "@annually": "0 0 1 1 *",
     ]
 
-    static func describe(_ schedule: String) -> String {
-        if schedule == "@reboot" { return "At startup" }
-        let expression = aliases[schedule] ?? schedule
-        let f = expression.split(separator: " ").map(String.init)
-        guard f.count == 5 else { return schedule }
-        let (minute, hour, dom, month, dow) = (f[0], f[1], f[2], f[3], f[4])
-        let restIsAny = dom == "*" && month == "*" && dow == "*"
+    private static let monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
+    private static let dayNames = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"]
 
-        if minute == "*" && hour == "*" && restIsAny { return "Every minute" }
-        if minute.hasPrefix("*/"), hour == "*", restIsAny { return "Every \(minute.dropFirst(2)) min" }
-        if let m = Int(minute), hour == "*", restIsAny { return "Hourly at :\(String(format: "%02d", m))" }
-        if let m = Int(minute), hour.hasPrefix("*/"), restIsAny {
-            return "Every \(hour.dropFirst(2)) h at :\(String(format: "%02d", m))"
+    /// The 5 fields of a schedule, with aliases expanded and month/day names
+    /// ("JAN", "MON-FRI") turned into numbers. nil if it isn't a 5-field schedule.
+    private static func scheduleFields(_ schedule: String) -> [String]? {
+        var f = (aliases[schedule.lowercased()] ?? schedule).split(separator: " ").map(String.init)
+        guard f.count == 5 else { return nil }
+        f[3] = replacingNames(in: f[3], names: monthNames, firstNumber: 1)
+        f[4] = replacingNames(in: f[4], names: dayNames, firstNumber: 0)
+        return f
+    }
+
+    private static func replacingNames(in field: String, names: [String], firstNumber: Int) -> String {
+        var result = field.uppercased()
+        for (index, name) in names.enumerated() {
+            result = result.replacingOccurrences(of: name, with: String(index + firstNumber))
         }
-        if let m = Int(minute), let h = Int(hour) {
-            let time = String(format: "%02d:%02d", h, m)
-            if restIsAny { return "Daily \(time)" }
-            if dom == "*", month == "*", dow == "1-5" { return "Mon–Fri \(time)" }
-            if let d = Int(dom), month == "*", dow == "*" { return "Monthly on day \(d) at \(time)" }
+        return result
+    }
+
+    /// "Daily 08:00, 16:00", "Mon–Fri 09:00", "Every 15 min, 09:00–17:59, Mon–Fri", …
+    /// Falls back to the schedule itself when it can't be said more simply.
+    static func describe(_ schedule: String) -> String {
+        if schedule.lowercased() == "@reboot" { return "At startup" }
+        guard let f = scheduleFields(schedule),
+              let time = describeTime(minute: f[0], hour: f[1]),
+              let text = describeDays(time, dom: f[2], month: f[3], dow: f[4]) else { return schedule }
+        return text
+    }
+
+    /// Either fixed clock times ("08:00, 16:00") or something that repeats during the day ("Every 15 min").
+    private enum TimeText {
+        case times(String)
+        case repeating(String)
+    }
+
+    private static func describeTime(minute: String, hour: String) -> TimeText? {
+        if minute == "*" && hour == "*" { return .repeating("Every minute") }
+        if let step = everyStep(minute) {
+            if hour == "*" { return .repeating("Every \(step) min") }
+            if let (from, to) = hourRange(hour) {
+                return .repeating(String(format: "Every %@ min, %02d:00–%02d:59", step, from, to))
+            }
+            return nil
         }
-        return expression
+        guard let minutes = fixedValues(minute, 0...59) else { return nil }
+        if hour == "*" {
+            return .repeating("Hourly at " + minutes.map { String(format: ":%02d", $0) }.joined(separator: ", "))
+        }
+        if let step = everyStep(hour), minutes.count == 1 {
+            return .repeating(String(format: "Every %@ h at :%02d", step, minutes[0]))
+        }
+        if let (from, to) = hourRange(hour), minutes.count == 1 {
+            return .repeating(String(format: "Hourly %02d:%02d–%02d:%02d", from, minutes[0], to, minutes[0]))
+        }
+        guard let hours = fixedValues(hour, 0...23) else { return nil }
+        let times = hours.flatMap { h in minutes.map { m in String(format: "%02d:%02d", h, m) } }
+        return .times(ScheduledJob.shortList(times))
+    }
+
+    private static func describeDays(_ time: TimeText, dom: String, month: String, dow: String) -> String? {
+        switch (dom, month, dow) {
+        case ("*", "*", "*"):
+            switch time {
+            case .times(let t): return "Daily \(t)"
+            case .repeating(let r): return r
+            }
+        case ("*", "*", _):
+            guard let days = values(dow, 0...7) else { return nil }
+            let d = ScheduledJob.describeWeekdays(Array(days))
+            switch time {
+            case .times(let t): return "\(d) \(t)"
+            case .repeating(let r): return d == "Daily" ? r : "\(r), \(d)"
+            }
+        case (_, "*", "*"):
+            guard let days = fixedValues(dom, 1...31), days.count <= 4 else { return nil }
+            let list = days.map(String.init).joined(separator: ", ")
+            let label = days.count == 1 ? "day \(list)" : "days \(list)"
+            switch time {
+            case .times(let t): return "Monthly on \(label) at \(t)"
+            case .repeating(let r): return "\(r), on \(label)"
+            }
+        case (_, _, "*"):
+            guard let day = Int(dom), let m = Int(month), (1...12).contains(m), case .times(let t) = time else { return nil }
+            return "Yearly on \(monthNames[m - 1].capitalized) \(day) at \(t)"
+        default:
+            return nil
+        }
+    }
+
+    /// "*/15" → "15"
+    private static func everyStep(_ field: String) -> String? {
+        guard field.hasPrefix("*/"), Int(field.dropFirst(2)) != nil else { return nil }
+        return String(field.dropFirst(2))
+    }
+
+    /// "9-17" → (9, 17)
+    private static func hourRange(_ field: String) -> (Int, Int)? {
+        let bounds = field.split(separator: "-").compactMap { Int($0) }
+        guard bounds.count == 2, !field.contains(","), !field.contains("/"), bounds[0] < bounds[1] else { return nil }
+        return (bounds[0], bounds[1])
+    }
+
+    /// Exact values like "0", "8,16" or "1-5" (no "*" or steps), sorted.
+    private static func fixedValues(_ field: String, _ range: ClosedRange<Int>) -> [Int]? {
+        guard !field.contains("*"), !field.contains("/"), let set = values(field, range) else { return nil }
+        return set.sorted()
     }
 
     /// Finds the next matching minute by stepping forward (up to ~1 year).
     static func nextRun(_ schedule: String, after date: Date) -> Date? {
-        guard schedule != "@reboot" else { return nil }
-        let fields = (aliases[schedule] ?? schedule).split(separator: " ").map(String.init)
-        guard fields.count == 5,
+        guard schedule.lowercased() != "@reboot", let fields = scheduleFields(schedule),
               let minutes = values(fields[0], 0...59),
               let hours = values(fields[1], 0...23),
               let days = values(fields[2], 1...31),
